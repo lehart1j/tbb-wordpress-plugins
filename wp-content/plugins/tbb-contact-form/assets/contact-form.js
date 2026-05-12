@@ -48,6 +48,11 @@
         if (submitBtn) submitBtn.disabled = true;
 
         try {
+          const pageUrlInput = qs("[data-tbb-cf-page-url]", form);
+          if (pageUrlInput) {
+            pageUrlInput.value = window.location.href;
+          }
+
           const fd = new FormData(form);
           // Prefer localized nonce, fallback to hidden input.
           if (window.TBBContactForm?.nonce && !fd.get("nonce")) {
