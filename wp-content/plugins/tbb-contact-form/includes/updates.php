@@ -5,32 +5,67 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Optional GitHub Releases update support.
+ * Optional GitHub Releases update support (monorepo-friendly).
  *
- * How it works:
- * - If you define TBB_CONTACT_FORM_GITHUB_REPO as "owner/repo", the plugin will check GitHub releases.
- * - If the repo is private, also define TBB_CONTACT_FORM_GITHUB_TOKEN so it can read releases.
+ * Repo: define `TBB_CONTACT_FORM_GITHUB_REPO` as `owner/repo` in wp-config.php before this file loads,
+ * or rely on the default baked into the plugin for TBB deployments.
  *
- * Notes:
- * - For a monorepo (many plugins in one repo), use a tag prefix for each plugin:
- *     tbb-contact-form/v1.0.1
- * - Attach a zip asset built from this plugin folder, named:
- *     tbb-contact-form.zip
+ * Release tag format: `tbb-contact-form/v1.2.3` (prefix matches plugin folder name).
+ * Attach a release asset named `tbb-contact-form.zip` whose root folder is `tbb-contact-form/`.
+ *
+ * Do not rely on GitHub’s auto “Source code” zip for this plugin — it zips the whole repo with the wrong layout.
  */
+
+/** @return bool */
+function tbb_contact_form_str_starts_with(string $haystack, string $needle): bool {
+	if ($needle === '') {
+		return true;
+	}
+	return strncmp($haystack, $needle, strlen($needle)) === 0;
+}
+
+/** @return bool */
+function tbb_contact_form_str_ends_with(string $haystack, string $needle): bool {
+	if ($needle === '') {
+		return true;
+	}
+	$len = strlen($needle);
+	return $len <= strlen($haystack) && substr_compare($haystack, $needle, -$len, $len) === 0;
+}
+
+/**
+ * Default GitHub repo for this plugin’s monorepo (override with TBB_CONTACT_FORM_GITHUB_REPO).
+ */
+function tbb_contact_form_github_repo(): string {
+	if (defined('TBB_CONTACT_FORM_GITHUB_REPO')) {
+		return (string) constant('TBB_CONTACT_FORM_GITHUB_REPO');
+	}
+	return 'lehart1j/tbb-wordpress-plugins';
+}
+
+/**
+ * GitHub rejects many default HTTP clients; ensure User-Agent on all GitHub requests (API + downloads).
+ */
+function tbb_contact_form_github_http_request_args(array $args, string $url): array {
+	if (strpos($url, 'github.com') === false) {
+		return $args;
+	}
+	$args['user-agent'] = 'WordPress/' . get_bloginfo('version') . '; ' . home_url('/');
+
+	return $args;
+}
 
 function tbb_contact_form_maybe_enable_updates(string $plugin_file): void {
 	if (!is_admin()) {
 		return;
 	}
 
-	if (!defined('TBB_CONTACT_FORM_GITHUB_REPO')) {
-		return;
-	}
-
-	$repo = (string) constant('TBB_CONTACT_FORM_GITHUB_REPO');
+	$repo = apply_filters('tbb_contact_form_github_repo', tbb_contact_form_github_repo());
 	if ($repo === '' || strpos($repo, '/') === false) {
 		return;
 	}
+
+	add_filter('http_request_args', 'tbb_contact_form_github_http_request_args', 10, 2);
 
 	add_filter('site_transient_update_plugins', function ($transient) use ($repo, $plugin_file) {
 		if (!is_object($transient)) {
@@ -78,11 +113,9 @@ function tbb_contact_form_fetch_latest_release_for_tag_prefix(string $repo, stri
 		return $cached;
 	}
 
-	// We cannot use /releases/latest in a monorepo; instead scan recent releases and pick the
-	// newest one whose tag_name starts with $tag_prefix.
 	$url = 'https://api.github.com/repos/' . $repo . '/releases?per_page=30';
 	$args = [
-		'timeout' => 10,
+		'timeout' => 15,
 		'headers' => [
 			'Accept' => 'application/vnd.github+json',
 			'User-Agent' => 'WordPress/' . get_bloginfo('version') . '; ' . home_url('/'),
@@ -115,9 +148,9 @@ function tbb_contact_form_fetch_latest_release_for_tag_prefix(string $repo, stri
 			continue;
 		}
 		$tag = isset($release['tag_name']) ? (string) $release['tag_name'] : '';
-		if ($tag !== '' && str_starts_with($tag, $tag_prefix)) {
+		if ($tag !== '' && tbb_contact_form_str_starts_with($tag, $tag_prefix)) {
 			$match = $release;
-			break; // API returns newest first.
+			break;
 		}
 	}
 
@@ -130,7 +163,7 @@ function tbb_contact_form_fetch_latest_release_for_tag_prefix(string $repo, stri
 }
 
 function tbb_contact_form_extract_version_from_tag(string $tag, string $prefix): ?string {
-	if (!str_starts_with($tag, $prefix)) {
+	if (!tbb_contact_form_str_starts_with($tag, $prefix)) {
 		return null;
 	}
 
@@ -144,10 +177,6 @@ function tbb_contact_form_extract_version_from_tag(string $tag, string $prefix):
 
 function tbb_contact_form_pick_release_zip(array $release, string $expected_basename): ?string {
 	if (empty($release['assets']) || !is_array($release['assets'])) {
-		// Fallback to the auto-generated source zipball (works for public repos only).
-		if (!empty($release['zipball_url'])) {
-			return (string) $release['zipball_url'];
-		}
 		return null;
 	}
 
@@ -161,17 +190,15 @@ function tbb_contact_form_pick_release_zip(array $release, string $expected_base
 		}
 	}
 
-	// If they attached any zip, use the first zip we see.
 	foreach ($release['assets'] as $asset) {
 		if (!is_array($asset)) {
 			continue;
 		}
 		$name = isset($asset['name']) ? (string) $asset['name'] : '';
-		if (str_ends_with(strtolower($name), '.zip') && !empty($asset['browser_download_url'])) {
+		if (tbb_contact_form_str_ends_with(strtolower($name), '.zip') && !empty($asset['browser_download_url'])) {
 			return (string) $asset['browser_download_url'];
 		}
 	}
 
 	return null;
 }
-

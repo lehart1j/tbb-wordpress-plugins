@@ -3,7 +3,7 @@ Contributors: tbb
 Tags: contact form, popup, ajax
 Requires at least: 6.0
 Tested up to: 6.6
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,19 +21,11 @@ Optional: override the button label on that page only:
 
 The shortcode outputs a button; clicking it opens a popup (modal) without leaving the page. Submissions are emailed to the site admin, stored in the database, and listed under **TBB Contact → Messages**.
 
-== Updates via GitHub (optional) ==
+== Updates via GitHub ==
 
-If you keep this plugin in a GitHub repo, you can enable WordPress update checks from GitHub Releases.
+This plugin checks GitHub for releases whose tag starts with `tbb-contact-form/` (for example `tbb-contact-form/v1.1.1`). The default repo is `lehart1j/tbb-wordpress-plugins`; override with `define( 'TBB_CONTACT_FORM_GITHUB_REPO', 'owner/repo' );` in `wp-config.php`.
 
-Add the following constants somewhere that loads on every request (commonly `wp-config.php`):
+Each release must include a **manually uploaded** zip asset named `tbb-contact-form.zip`. The zip must unpack to a folder named `tbb-contact-form` containing the plugin files (do not use GitHub’s auto “Source code” archive — it is the whole repo and will not install correctly).
 
-define('TBB_CONTACT_FORM_GITHUB_REPO', 'OWNER/REPO');
-// For a monorepo (many plugins in one repo), this plugin expects tags like:
-// tbb-contact-form/v1.0.1
-// For private repos, also add a GitHub token that can read releases:
-// define('TBB_CONTACT_FORM_GITHUB_TOKEN', 'YOUR_TOKEN_HERE');
-
-Then publish a GitHub Release and attach a zip asset named:
-
-tbb-contact-form.zip
+Optional: `define( 'TBB_CONTACT_FORM_GITHUB_TOKEN', '…' );` for higher API rate limits.
 
