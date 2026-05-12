@@ -45,12 +45,18 @@ function tbb_contact_form_github_repo(): string {
 
 /**
  * GitHub rejects many default HTTP clients; ensure User-Agent on all GitHub requests (API + downloads).
+ *
+ * @param array $args Request args.
+ * @param mixed $url  Request URL (must tolerate non-string from core / extensions).
+ * @return array
  */
-function tbb_contact_form_github_http_request_args(array $args, string $url): array {
-	if (strpos($url, 'github.com') === false) {
+function tbb_contact_form_github_http_request_args($args, $url) {
+	if (!is_array($args) || !is_string($url) || strpos($url, 'github.com') === false) {
 		return $args;
 	}
-	$args['user-agent'] = 'WordPress/' . get_bloginfo('version') . '; ' . home_url('/');
+	if (function_exists('get_bloginfo') && function_exists('home_url')) {
+		$args['user-agent'] = 'WordPress/' . get_bloginfo('version') . '; ' . home_url('/');
+	}
 
 	return $args;
 }
@@ -60,50 +66,76 @@ function tbb_contact_form_maybe_enable_updates(string $plugin_file): void {
 		return;
 	}
 
+	static $updates_hooks_registered = false;
+	if ($updates_hooks_registered) {
+		return;
+	}
+
 	$repo = apply_filters('tbb_contact_form_github_repo', tbb_contact_form_github_repo());
 	if ($repo === '' || strpos($repo, '/') === false) {
 		return;
 	}
 
+	$updates_hooks_registered = true;
+
 	add_filter('http_request_args', 'tbb_contact_form_github_http_request_args', 10, 2);
 
-	add_filter('site_transient_update_plugins', function ($transient) use ($repo, $plugin_file) {
-		if (!is_object($transient)) {
-			return $transient;
-		}
+	add_filter(
+		'site_transient_update_plugins',
+		static function ($transient) use ($repo, $plugin_file) {
+			static $in_filter = false;
 
-		$plugin_basename = plugin_basename($plugin_file);
+			if ($in_filter || !is_object($transient)) {
+				return $transient;
+			}
 
-		$release = tbb_contact_form_fetch_latest_release_for_tag_prefix($repo, 'tbb-contact-form/');
-		if (!$release || empty($release['tag_name'])) {
-			return $transient;
-		}
+			$in_filter = true;
 
-		$tag = (string) $release['tag_name'];
-		$remote_version = tbb_contact_form_extract_version_from_tag($tag, 'tbb-contact-form/');
-		if ($remote_version === null) {
-			return $transient;
-		}
+			try {
+				$plugin_basename = plugin_basename($plugin_file);
 
-		if (version_compare($remote_version, TBB_CONTACT_FORM_VERSION, '<=')) {
-			return $transient;
-		}
+				$release = tbb_contact_form_fetch_latest_release_for_tag_prefix($repo, 'tbb-contact-form/');
+				if (!$release || empty($release['tag_name'])) {
+					return $transient;
+				}
 
-		$package = tbb_contact_form_pick_release_zip($release, 'tbb-contact-form');
-		if (!$package) {
-			return $transient;
-		}
+				$tag = (string) $release['tag_name'];
+				$remote_version = tbb_contact_form_extract_version_from_tag($tag, 'tbb-contact-form/');
+				if ($remote_version === null) {
+					return $transient;
+				}
 
-		$transient->response[$plugin_basename] = (object) [
-			'slug' => 'tbb-contact-form',
-			'plugin' => $plugin_basename,
-			'new_version' => $remote_version,
-			'url' => 'https://github.com/' . $repo,
-			'package' => $package,
-		];
+				if (version_compare($remote_version, TBB_CONTACT_FORM_VERSION, '<=')) {
+					return $transient;
+				}
 
-		return $transient;
-	});
+				$package = tbb_contact_form_pick_release_zip($release, 'tbb-contact-form');
+				if (!$package) {
+					return $transient;
+				}
+
+				if (!isset($transient->response) || !is_array($transient->response)) {
+					$transient->response = [];
+				}
+
+				$transient->response[ $plugin_basename ] = (object) [
+					'slug' => 'tbb-contact-form',
+					'plugin' => $plugin_basename,
+					'new_version' => $remote_version,
+					'url' => 'https://github.com/' . $repo,
+					'package' => $package,
+				];
+
+				return $transient;
+			} catch (\Throwable $e) {
+				return $transient;
+			} finally {
+				$in_filter = false;
+			}
+		},
+		10,
+		1
+	);
 }
 
 function tbb_contact_form_fetch_latest_release_for_tag_prefix(string $repo, string $tag_prefix): ?array {
