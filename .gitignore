@@ -1,0 +1,14 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# WordPress / uploads / caches
+wp-content/uploads/
+wp-content/cache/
+wp-content/upgrade/
+
+# Logs / temp
+*.log
+*.tmp
+
