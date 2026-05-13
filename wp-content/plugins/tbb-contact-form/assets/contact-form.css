@@ -1,7 +1,9 @@
+/* Stack above theme headers/overlays; isolate stacking so children z-index work */
 .tbb-cf-modal {
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: 9999999;
+  isolation: isolate;
   display: none;
 }
 
@@ -9,16 +11,21 @@
   display: block;
 }
 
+/* Backdrop: below panel, still receives clicks outside the card */
 .tbb-cf-backdrop {
   position: absolute;
   inset: 0;
+  z-index: 1;
   background: rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
 }
 
+/* Panel and all controls must receive pointer/touch events (some themes block nested content) */
 .tbb-cf-panel {
   position: absolute;
   right: 16px;
   bottom: 16px;
+  z-index: 2;
   width: min(520px, calc(100vw - 32px));
   max-height: min(80vh, 720px);
   overflow: auto;
@@ -29,6 +36,23 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
   padding: 18px;
   font: inherit;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.tbb-cf-panel input,
+.tbb-cf-panel textarea,
+.tbb-cf-panel select,
+.tbb-cf-panel button {
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.tbb-cf-panel input,
+.tbb-cf-panel textarea,
+.tbb-cf-panel select {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .tbb-cf-header {
@@ -45,6 +69,7 @@
   position: absolute;
   top: 10px;
   right: 10px;
+  z-index: 3;
   width: 34px;
   height: 34px;
   border: 0;
@@ -54,6 +79,7 @@
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .tbb-cf-close:hover {
@@ -73,15 +99,28 @@
 }
 
 .tbb-cf-field input,
-.tbb-cf-field textarea {
+.tbb-cf-field textarea,
+.tbb-cf-field select {
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
   font: inherit;
   color: inherit;
   border-radius: 10px;
   border: 1px solid rgba(0, 0, 0, 0.18);
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.tbb-cf-field input,
+.tbb-cf-field textarea {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.tbb-cf-field select {
+  appearance: auto;
+  -webkit-appearance: menulist;
 }
 
 .tbb-cf-field textarea {
@@ -104,6 +143,7 @@
   color: var(--wp--preset--color--base, #fff);
   cursor: pointer;
   font: inherit;
+  pointer-events: auto;
 }
 
 .tbb-cf-submit:disabled {
@@ -136,4 +176,3 @@ html.tbb-cf-open {
   font-size: 0.9rem;
   padding: 0.5em 0;
 }
-

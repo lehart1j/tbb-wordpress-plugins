@@ -3,7 +3,7 @@ Contributors: tbb
 Tags: contact form, popup, ajax
 Requires at least: 6.0
 Tested up to: 6.6
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,7 +19,7 @@ Optional: override the button label on that page only:
 
 [tbb_contact_form id="1" button_label="Contact us now"]
 
-The shortcode outputs a button; clicking it opens a popup (modal) without leaving the page. Submissions are emailed to the site admin, stored in the database, and listed under **TBB Contact → Messages**.
+The shortcode outputs a button; clicking it opens a popup (modal) without leaving the page. Submissions are stored in the database and listed under **TBB Contact → Messages**. Notification emails go to the addresses set under **TBB Contact → Settings** (or the site administration email if that list is left empty).
 
 == Updates via GitHub ==
 

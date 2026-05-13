@@ -148,7 +148,6 @@ final class TBB_Contact_Form_Ajax {
 			wp_send_json_error(['message' => __('Sorry, something went wrong. Please try again.', 'tbb-contact-form')], 500);
 		}
 
-		$admin_email = (string) get_option('admin_email');
 		$email_intro = [
 			__('You received a new form submission.', 'tbb-contact-form'),
 			'',
@@ -161,11 +160,15 @@ final class TBB_Contact_Form_Ajax {
 		$body = implode("\n", $email_intro) . $message_body;
 
 		$headers = [];
-		if ($admin_email !== '' && is_email($reply_email)) {
+		if (is_email($reply_email)) {
 			$from_name = $reply_name !== '' ? $reply_name : $reply_email;
 			$headers[] = 'Reply-To: ' . $from_name . ' <' . $reply_email . '>';
 		}
-		wp_mail($admin_email, $mail_subject, $body, $headers);
+
+		$recipients = tbb_contact_form_get_notification_emails();
+		if (!empty($recipients)) {
+			wp_mail($recipients, $mail_subject, $body, $headers);
+		}
 
 		wp_send_json_success([
 			'message' => __('Thanks! Your message was sent.', 'tbb-contact-form'),

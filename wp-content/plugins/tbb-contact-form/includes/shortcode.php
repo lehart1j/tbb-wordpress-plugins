@@ -94,7 +94,6 @@ final class TBB_Contact_Form_Shortcode {
 			</button>
 
 			<div class="tbb-cf-modal" data-tbb-cf-modal aria-hidden="true">
-				<div class="tbb-cf-backdrop" data-tbb-cf-close tabindex="-1"></div>
 				<div class="tbb-cf-panel" role="dialog" aria-modal="true" aria-label="<?php echo esc_attr($modal_title); ?>">
 					<button type="button" class="tbb-cf-close" data-tbb-cf-close aria-label="<?php echo esc_attr__('Close', 'tbb-contact-form'); ?>">
 						&times;
@@ -157,6 +156,7 @@ final class TBB_Contact_Form_Shortcode {
 						</div>
 					</form>
 				</div>
+				<div class="tbb-cf-backdrop" data-tbb-cf-close tabindex="-1"></div>
 			</div>
 		</div>
 		<?php

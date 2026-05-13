@@ -5,8 +5,17 @@
   function openModal(modal) {
     modal.setAttribute("aria-hidden", "false");
     document.documentElement.classList.add("tbb-cf-open");
-    const first = qs("input, textarea, button", modal);
-    if (first) first.focus({ preventScroll: true });
+    const panel = qs(".tbb-cf-panel", modal);
+    const scope = panel || modal;
+    const first = qs(
+      "input:not([type=hidden]):not([type=button]):not([type=submit]), textarea, select",
+      scope
+    );
+    if (first) {
+      window.requestAnimationFrame(() => {
+        first.focus({ preventScroll: true });
+      });
+    }
   }
 
   function closeModal(modal) {
