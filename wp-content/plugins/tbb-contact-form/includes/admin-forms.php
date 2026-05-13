@@ -9,25 +9,6 @@ final class TBB_Contact_Form_Admin_Forms {
 
 	public function __construct() {
 		add_action('admin_init', [$this, 'maybe_save']);
-		add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
-	}
-
-	public function enqueue_assets(string $hook_suffix): void {
-		$page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
-		if ($page !== self::PAGE_SLUG) {
-			return;
-		}
-
-		$action = isset($_GET['action']) ? sanitize_text_field(wp_unslash($_GET['action'])) : '';
-		if ($action === 'edit') {
-			wp_enqueue_script(
-				'tbb-contact-form-admin',
-				TBB_CONTACT_FORM_URL . 'assets/admin-forms.js',
-				[],
-				TBB_CONTACT_FORM_VERSION,
-				true
-			);
-		}
 	}
 
 	public function maybe_save(): void {
@@ -52,34 +33,7 @@ final class TBB_Contact_Form_Admin_Forms {
 		$title = isset($_POST['title']) ? sanitize_text_field(wp_unslash($_POST['title'])) : '';
 		$button_label = isset($_POST['button_label']) ? sanitize_text_field(wp_unslash($_POST['button_label'])) : '';
 		$modal_title = isset($_POST['modal_title']) ? sanitize_text_field(wp_unslash($_POST['modal_title'])) : '';
-
-		$field_names = isset($_POST['field_name']) ? (array) wp_unslash($_POST['field_name']) : [];
-		$field_labels = isset($_POST['field_label']) ? (array) wp_unslash($_POST['field_label']) : [];
-		$field_types = isset($_POST['field_type']) ? (array) wp_unslash($_POST['field_type']) : [];
-		$field_required = isset($_POST['field_required']) ? (array) wp_unslash($_POST['field_required']) : [];
-		$field_options = isset($_POST['field_options']) ? (array) wp_unslash($_POST['field_options']) : [];
-
-		$fields = [];
-		$count = max(count($field_names), count($field_labels), count($field_types));
-
-		for ($i = 0; $i < $count; $i++) {
-			$name = isset($field_names[$i]) ? sanitize_key((string) $field_names[$i]) : '';
-			if ($name === '') {
-				continue;
-			}
-			$label = isset($field_labels[$i]) ? sanitize_text_field((string) $field_labels[$i]) : $name;
-			$type = isset($field_types[$i]) ? sanitize_text_field((string) $field_types[$i]) : 'text';
-			$req = isset($field_required[$i]) && (string) $field_required[$i] === '1';
-			$opts = isset($field_options[$i]) ? sanitize_text_field((string) $field_options[$i]) : '';
-
-			$fields[] = [
-				'name' => $name,
-				'label' => $label !== '' ? $label : $name,
-				'type' => $type,
-				'required' => $req,
-				'options' => $opts,
-			];
-		}
+		$cf7_pasted = isset($_POST['cf7_shortcode']) ? trim(wp_unslash((string) $_POST['cf7_shortcode'])) : '';
 
 		if ($title === '') {
 			$url = add_query_arg(['page' => self::PAGE_SLUG, 'action' => 'edit', 'id' => $id, 'tbb_err' => 'title'], admin_url('admin.php'));
@@ -87,21 +41,22 @@ final class TBB_Contact_Form_Admin_Forms {
 			exit;
 		}
 
-		if (empty($fields)) {
-			$url = add_query_arg(['page' => self::PAGE_SLUG, 'action' => 'edit', 'id' => $id, 'tbb_err' => 'fields'], admin_url('admin.php'));
+		if (!tbb_contact_form_cf7_is_active()) {
+			$url = add_query_arg(['page' => self::PAGE_SLUG, 'action' => 'edit', 'id' => $id, 'tbb_err' => 'cf7_plugin'], admin_url('admin.php'));
 			wp_safe_redirect($url);
 			exit;
 		}
 
-		$has_email = false;
-		foreach ($fields as $f) {
-			if (($f['type'] ?? '') === 'email') {
-				$has_email = true;
-				break;
-			}
+		$resolved = tbb_contact_form_cf7_resolve($cf7_pasted);
+		if (!$resolved) {
+			$url = add_query_arg(['page' => self::PAGE_SLUG, 'action' => 'edit', 'id' => $id, 'tbb_err' => 'cf7'], admin_url('admin.php'));
+			wp_safe_redirect($url);
+			exit;
 		}
-		if (!$has_email) {
-			$url = add_query_arg(['page' => self::PAGE_SLUG, 'action' => 'edit', 'id' => $id, 'tbb_err' => 'email'], admin_url('admin.php'));
+
+		$cf7_shortcode = tbb_contact_form_cf7_build_shortcode($resolved);
+		if ($cf7_shortcode === '') {
+			$url = add_query_arg(['page' => self::PAGE_SLUG, 'action' => 'edit', 'id' => $id, 'tbb_err' => 'cf7'], admin_url('admin.php'));
 			wp_safe_redirect($url);
 			exit;
 		}
@@ -111,7 +66,8 @@ final class TBB_Contact_Form_Admin_Forms {
 			'title' => $title,
 			'button_label' => $button_label !== '' ? $button_label : __('Contact us now', 'tbb-contact-form'),
 			'modal_title' => $modal_title !== '' ? $modal_title : $title,
-			'fields_json' => wp_json_encode($fields),
+			'cf7_shortcode' => $cf7_shortcode,
+			'fields_json' => '[]',
 		]);
 
 		wp_safe_redirect(add_query_arg(['page' => self::PAGE_SLUG, 'updated' => '1', 'action' => 'edit', 'id' => $saved_id], admin_url('admin.php')));
@@ -178,7 +134,7 @@ final class TBB_Contact_Form_Admin_Forms {
 			<hr class="wp-header-end">
 
 			<?php if (empty($forms)) : ?>
-				<p><?php echo esc_html__('No forms yet. Create one to get a shortcode for your site.', 'tbb-contact-form'); ?></p>
+				<p><?php echo esc_html__('No popups yet. Create one, paste a Contact Form 7 shortcode, then place the TBB shortcode on your site.', 'tbb-contact-form'); ?></p>
 			<?php else : ?>
 				<table class="widefat striped">
 					<thead>
@@ -208,7 +164,7 @@ final class TBB_Contact_Form_Admin_Forms {
 							<td><?php echo esc_html((string) $f['updated_at']); ?></td>
 							<td>
 								<a class="button button-small" href="<?php echo esc_url($edit); ?>"><?php echo esc_html__('Edit', 'tbb-contact-form'); ?></a>
-								<a class="button button-small button-link-delete" href="<?php echo esc_url($del); ?>" onclick="return confirm('<?php echo esc_js(__('Delete this form? Submissions stay in Messages.', 'tbb-contact-form')); ?>');"><?php echo esc_html__('Delete', 'tbb-contact-form'); ?></a>
+								<a class="button button-small button-link-delete" href="<?php echo esc_url($del); ?>" onclick="return confirm('<?php echo esc_js(__('Delete this popup? Submissions stay in Messages.', 'tbb-contact-form')); ?>');"><?php echo esc_html__('Delete', 'tbb-contact-form'); ?></a>
 							</td>
 						</tr>
 					<?php endforeach; ?>
@@ -234,45 +190,27 @@ final class TBB_Contact_Form_Admin_Forms {
 
 		$err = isset($_GET['tbb_err']) ? sanitize_text_field(wp_unslash($_GET['tbb_err'])) : '';
 		if ($err === 'title') {
-			echo '<div class="notice notice-error"><p>' . esc_html__('Please enter a form title.', 'tbb-contact-form') . '</p></div>';
-		} elseif ($err === 'fields') {
-			echo '<div class="notice notice-error"><p>' . esc_html__('Add at least one field with a valid name (letters, numbers, underscores).', 'tbb-contact-form') . '</p></div>';
-		} elseif ($err === 'email') {
-			echo '<div class="notice notice-error"><p>' . esc_html__('Include at least one field of type Email so replies can be routed correctly.', 'tbb-contact-form') . '</p></div>';
+			echo '<div class="notice notice-error"><p>' . esc_html__('Please enter a title.', 'tbb-contact-form') . '</p></div>';
+		} elseif ($err === 'cf7') {
+			echo '<div class="notice notice-error"><p>' . esc_html__('Paste a valid Contact Form 7 shortcode (e.g. from Contact → Contact Forms → copy). The form must exist.', 'tbb-contact-form') . '</p></div>';
+		} elseif ($err === 'cf7_plugin') {
+			echo '<div class="notice notice-error"><p>' . esc_html__('Install and activate the Contact Form 7 plugin before saving.', 'tbb-contact-form') . '</p></div>';
 		}
 
 		$title = $form ? (string) $form['title'] : '';
 		$button_label = $form ? (string) $form['button_label'] : __('Contact us now', 'tbb-contact-form');
 		$modal_title = $form ? (string) $form['modal_title'] : '';
-		$fields = $form ? tbb_contact_form_parse_fields_json((string) $form['fields_json']) : [];
-
-		if (empty($fields)) {
-			$fields = [
-				['name' => 'your_name', 'label' => __('Your name', 'tbb-contact-form'), 'type' => 'text', 'required' => true, 'options' => ''],
-				['name' => 'your_email', 'label' => __('Email', 'tbb-contact-form'), 'type' => 'email', 'required' => true, 'options' => ''],
-				['name' => 'message', 'label' => __('Message', 'tbb-contact-form'), 'type' => 'textarea', 'required' => true, 'options' => ''],
-			];
-		}
-
-		$types = [
-			'text' => __('Text', 'tbb-contact-form'),
-			'email' => __('Email', 'tbb-contact-form'),
-			'textarea' => __('Textarea', 'tbb-contact-form'),
-			'tel' => __('Phone', 'tbb-contact-form'),
-			'url' => __('URL', 'tbb-contact-form'),
-			'number' => __('Number', 'tbb-contact-form'),
-			'select' => __('Select', 'tbb-contact-form'),
-		];
+		$cf7_shortcode = $form && isset($form['cf7_shortcode']) ? (string) $form['cf7_shortcode'] : '';
 
 		?>
 		<div class="wrap">
-			<h1><?php echo $id > 0 ? esc_html__('Edit form', 'tbb-contact-form') : esc_html__('Add form', 'tbb-contact-form'); ?></h1>
+			<h1><?php echo $id > 0 ? esc_html__('Edit popup', 'tbb-contact-form') : esc_html__('Add popup', 'tbb-contact-form'); ?></h1>
 
 			<?php if ($id > 0) : ?>
 				<p><strong><?php echo esc_html__('Shortcode:', 'tbb-contact-form'); ?></strong> <code>[tbb_contact_form id="<?php echo esc_attr((string) $id); ?>"]</code></p>
 			<?php endif; ?>
 
-			<form method="post" action="<?php echo esc_url(admin_url('admin.php')); ?>" id="tbb-cf-form-builder">
+			<form method="post" action="<?php echo esc_url(admin_url('admin.php')); ?>">
 				<?php wp_nonce_field('tbb_cf_save_form'); ?>
 				<input type="hidden" name="tbb_cf_page" value="<?php echo esc_attr(self::PAGE_SLUG); ?>">
 				<input type="hidden" name="tbb_cf_form_save" value="1">
@@ -280,7 +218,7 @@ final class TBB_Contact_Form_Admin_Forms {
 
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><label for="tbb_cf_title"><?php echo esc_html__('Form title', 'tbb-contact-form'); ?></label></th>
+						<th scope="row"><label for="tbb_cf_title"><?php echo esc_html__('Title', 'tbb-contact-form'); ?></label></th>
 						<td><input name="title" id="tbb_cf_title" type="text" class="regular-text" value="<?php echo esc_attr($title); ?>" required></td>
 					</tr>
 					<tr>
@@ -289,55 +227,21 @@ final class TBB_Contact_Form_Admin_Forms {
 					</tr>
 					<tr>
 						<th scope="row"><label for="tbb_cf_modal"><?php echo esc_html__('Popup title', 'tbb-contact-form'); ?></label></th>
-						<td><input name="modal_title" id="tbb_cf_modal" type="text" class="regular-text" value="<?php echo esc_attr($modal_title); ?>" placeholder="<?php echo esc_attr__('Same as form title if empty', 'tbb-contact-form'); ?>"></td>
+						<td><input name="modal_title" id="tbb_cf_modal" type="text" class="regular-text" value="<?php echo esc_attr($modal_title); ?>" placeholder="<?php echo esc_attr__('Same as title if empty', 'tbb-contact-form'); ?>"></td>
 					</tr>
-				</table>
-
-				<h2><?php echo esc_html__('Fields', 'tbb-contact-form'); ?></h2>
-				<p class="description"><?php echo esc_html__('Field name is used internally (e.g. your_email). Use one Email field so notifications include a reply address.', 'tbb-contact-form'); ?></p>
-
-				<table class="widefat striped" id="tbb-cf-fields-table">
-					<thead>
 					<tr>
-						<th><?php echo esc_html__('Label', 'tbb-contact-form'); ?></th>
-						<th><?php echo esc_html__('Field name', 'tbb-contact-form'); ?></th>
-						<th><?php echo esc_html__('Type', 'tbb-contact-form'); ?></th>
-						<th><?php echo esc_html__('Required', 'tbb-contact-form'); ?></th>
-						<th><?php echo esc_html__('Select options', 'tbb-contact-form'); ?></th>
-						<th></th>
+						<th scope="row"><label for="tbb_cf_cf7"><?php echo esc_html__('Contact Form 7 shortcode', 'tbb-contact-form'); ?></label></th>
+						<td>
+							<textarea name="cf7_shortcode" id="tbb_cf_cf7" class="large-text code" rows="3" placeholder='[contact-form-7 id="123" title="Contact form 1"]'><?php echo esc_textarea($cf7_shortcode); ?></textarea>
+							<p class="description">
+								<?php echo esc_html__('Copy the shortcode from Contact → Contact Forms. Submissions and mail are handled by Contact Form 7, not this plugin.', 'tbb-contact-form'); ?>
+							</p>
+						</td>
 					</tr>
-					</thead>
-					<tbody id="tbb-cf-fields-body">
-					<?php foreach ($fields as $row) : ?>
-						<tr class="tbb-cf-field-row">
-							<td><input type="text" name="field_label[]" class="regular-text" value="<?php echo esc_attr((string) $row['label']); ?>"></td>
-							<td><input type="text" name="field_name[]" class="regular-text" value="<?php echo esc_attr((string) $row['name']); ?>" pattern="[a-z0-9_]+" title="<?php echo esc_attr__('Lowercase letters, numbers, underscore', 'tbb-contact-form'); ?>"></td>
-							<td>
-								<select name="field_type[]">
-									<?php foreach ($types as $val => $lab) : ?>
-										<option value="<?php echo esc_attr($val); ?>" <?php selected($row['type'], $val); ?>><?php echo esc_html($lab); ?></option>
-									<?php endforeach; ?>
-								</select>
-							</td>
-							<td>
-								<?php $req_val = !empty($row['required']) ? '1' : '0'; ?>
-								<select name="field_required[]">
-									<option value="0" <?php selected($req_val, '0'); ?>><?php echo esc_html__('No', 'tbb-contact-form'); ?></option>
-									<option value="1" <?php selected($req_val, '1'); ?>><?php echo esc_html__('Yes', 'tbb-contact-form'); ?></option>
-								</select>
-							</td>
-							<td><input type="text" name="field_options[]" class="regular-text" value="<?php echo esc_attr((string) ($row['options'] ?? '')); ?>" placeholder="<?php echo esc_attr__('Option A | Option B', 'tbb-contact-form'); ?>"></td>
-							<td><button type="button" class="button tbb-cf-remove-row"><?php echo esc_html__('Remove', 'tbb-contact-form'); ?></button></td>
-						</tr>
-					<?php endforeach; ?>
-					</tbody>
 				</table>
-				<p>
-					<button type="button" class="button" id="tbb-cf-add-field"><?php echo esc_html__('Add field', 'tbb-contact-form'); ?></button>
-				</p>
 
 				<p class="submit">
-					<input type="submit" class="button button-primary" value="<?php echo esc_attr__('Save form', 'tbb-contact-form'); ?>">
+					<input type="submit" class="button button-primary" value="<?php echo esc_attr__('Save', 'tbb-contact-form'); ?>">
 					<a class="button" href="<?php echo esc_url(admin_url('admin.php?page=' . self::PAGE_SLUG)); ?>"><?php echo esc_html__('Cancel', 'tbb-contact-form'); ?></a>
 				</p>
 			</form>

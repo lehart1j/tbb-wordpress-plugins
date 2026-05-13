@@ -21,6 +21,7 @@ function tbb_contact_form_create_forms_table(): void {
 		title VARCHAR(190) NOT NULL DEFAULT '',
 		button_label VARCHAR(190) NOT NULL DEFAULT '',
 		modal_title VARCHAR(190) NOT NULL DEFAULT '',
+		cf7_shortcode TEXT NOT NULL DEFAULT '',
 		fields_json LONGTEXT NOT NULL,
 		created_at DATETIME NOT NULL,
 		updated_at DATETIME NOT NULL,
@@ -29,6 +30,18 @@ function tbb_contact_form_create_forms_table(): void {
 	) {$charset_collate};";
 
 	dbDelta($sql);
+}
+
+function tbb_contact_form_upgrade_forms_cf7_column(): void {
+	global $wpdb;
+	$table = tbb_contact_forms_table_name();
+	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$col = $wpdb->get_results("SHOW COLUMNS FROM {$table} LIKE 'cf7_shortcode'");
+	if (!empty($col)) {
+		return;
+	}
+	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$wpdb->query("ALTER TABLE {$table} ADD COLUMN cf7_shortcode TEXT NOT NULL DEFAULT '' AFTER modal_title");
 }
 
 function tbb_contact_form_upgrade_messages_table(): void {
@@ -73,6 +86,7 @@ function tbb_contact_form_save_form(array $data): int {
 		'title' => (string) ($data['title'] ?? ''),
 		'button_label' => (string) ($data['button_label'] ?? ''),
 		'modal_title' => (string) ($data['modal_title'] ?? ''),
+		'cf7_shortcode' => (string) ($data['cf7_shortcode'] ?? ''),
 		'fields_json' => (string) ($data['fields_json'] ?? '[]'),
 		'updated_at' => $now,
 	];
@@ -80,12 +94,12 @@ function tbb_contact_form_save_form(array $data): int {
 	$id = isset($data['id']) ? (int) $data['id'] : 0;
 
 	if ($id > 0) {
-		$wpdb->update($table, $row, ['id' => $id], ['%s', '%s', '%s', '%s', '%s'], ['%d']);
+		$wpdb->update($table, $row, ['id' => $id], ['%s', '%s', '%s', '%s', '%s', '%s'], ['%d']);
 		return $id;
 	}
 
 	$row['created_at'] = $now;
-	$wpdb->insert($table, $row, ['%s', '%s', '%s', '%s', '%s', '%s']);
+	$wpdb->insert($table, $row, ['%s', '%s', '%s', '%s', '%s', '%s', '%s']);
 	return (int) $wpdb->insert_id;
 }
 

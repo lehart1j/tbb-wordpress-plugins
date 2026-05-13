@@ -23,6 +23,13 @@ final class TBB_Contact_Form_Ajax {
 			wp_send_json_error(['message' => __('Invalid form.', 'tbb-contact-form')], 400);
 		}
 
+		if (!empty($form['cf7_shortcode'])) {
+			wp_send_json_error(
+				['message' => __('This popup uses Contact Form 7. Use the form’s Send button.', 'tbb-contact-form')],
+				400
+			);
+		}
+
 		$defs = tbb_contact_form_parse_fields_json((string) $form['fields_json']);
 		if (empty($defs)) {
 			wp_send_json_error(['message' => __('This form has no fields.', 'tbb-contact-form')], 400);

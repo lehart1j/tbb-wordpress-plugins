@@ -32,7 +32,7 @@ final class TBB_Contact_Form_Shortcode {
 	 */
 	public function render_legacy_button($atts): string {
 		if (current_user_can('manage_options')) {
-			return '<p class="tbb-cf-admin-note"><em>' . esc_html__('Use [tbb_contact_form id="FORM_ID"] — create a form under TBB Contact → Forms.', 'tbb-contact-form') . '</em></p>';
+			return '<p class="tbb-cf-admin-note"><em>' . esc_html__('Use [tbb_contact_form id="FORM_ID"] — create a popup under TBB Contact → Forms.', 'tbb-contact-form') . '</em></p>';
 		}
 		return '';
 	}
@@ -64,18 +64,25 @@ final class TBB_Contact_Form_Shortcode {
 			return '';
 		}
 
-		$fields = tbb_contact_form_parse_fields_json((string) $form['fields_json']);
-		if (empty($fields)) {
+		$cf7_shortcode = isset($form['cf7_shortcode']) ? trim((string) $form['cf7_shortcode']) : '';
+		if ($cf7_shortcode === '') {
+			if (current_user_can('manage_options')) {
+				return '<p class="tbb-cf-admin-note"><em>' . esc_html__('This popup has no Contact Form 7 shortcode yet. Edit the form under TBB Contact → Forms and paste the CF7 shortcode.', 'tbb-contact-form') . '</em></p>';
+			}
 			return '';
 		}
 
+		if (!tbb_contact_form_cf7_is_active()) {
+			if (current_user_can('manage_options')) {
+				return '<p class="tbb-cf-admin-note"><em>' . esc_html__('Install and activate Contact Form 7 so the embedded form can load.', 'tbb-contact-form') . '</em></p>';
+			}
+			return '';
+		}
+
+		tbb_contact_form_cf7_enqueue_assets();
+
 		wp_enqueue_style('tbb-contact-form');
 		wp_enqueue_script('tbb-contact-form');
-
-		wp_localize_script('tbb-contact-form', 'TBBContactForm', [
-			'ajaxUrl' => admin_url('admin-ajax.php'),
-			'nonce' => wp_create_nonce('tbb_contact_form'),
-		]);
 
 		$button_text = (string) $atts['button_label'] !== ''
 			? (string) $atts['button_label']
@@ -112,76 +119,13 @@ final class TBB_Contact_Form_Shortcode {
 							<h3 id="<?php echo esc_attr($heading_id); ?>" class="tbb-cf-title"><?php echo esc_html($modal_title); ?></h3>
 						</div>
 
-						<form class="tbb-cf-form" data-tbb-cf-form>
-							<?php foreach ($fields as $fi => $field) : ?>
-								<?php
-								$name = (string) $field['name'];
-								$label = (string) $field['label'];
-								$type = (string) $field['type'];
-								$req = !empty($field['required']);
-								$options = (string) ($field['options'] ?? '');
-								$field_id = 'tbb-cf-' . $form_id . '-f' . (int) $fi;
-								?>
-								<div class="tbb-cf-field">
-									<label class="tbb-cf-field-label" for="<?php echo esc_attr($field_id); ?>">
-										<?php echo esc_html($label); ?><?php echo $req ? ' <span class="tbb-cf-req">*</span>' : ''; ?>
-									</label>
-									<?php if ($type === 'textarea') : ?>
-										<textarea
-											id="<?php echo esc_attr($field_id); ?>"
-											class="tbb-cf-control"
-											name="<?php echo esc_attr($name); ?>"
-											rows="5"
-											<?php echo $req ? 'required' : ''; ?>
-										></textarea>
-									<?php elseif ($type === 'select') : ?>
-										<?php
-										$parts = array_map('trim', explode('|', $options));
-										$parts = array_filter($parts);
-										?>
-										<select id="<?php echo esc_attr($field_id); ?>" class="tbb-cf-control" name="<?php echo esc_attr($name); ?>" <?php echo $req ? 'required' : ''; ?>>
-											<?php if (!$req) : ?>
-												<option value=""><?php echo esc_html__('— Select —', 'tbb-contact-form'); ?></option>
-											<?php endif; ?>
-											<?php foreach ($parts as $opt) : ?>
-												<option value="<?php echo esc_attr($opt); ?>"><?php echo esc_html($opt); ?></option>
-											<?php endforeach; ?>
-										</select>
-									<?php else : ?>
-										<?php
-										if ($type === 'number') {
-											$input_type = 'number';
-										} elseif (in_array($type, ['email', 'tel', 'url'], true)) {
-											$input_type = $type;
-										} else {
-											$input_type = 'text';
-										}
-										?>
-										<input
-											id="<?php echo esc_attr($field_id); ?>"
-											class="tbb-cf-control"
-											name="<?php echo esc_attr($name); ?>"
-											type="<?php echo esc_attr($input_type); ?>"
-											<?php echo $req ? 'required' : ''; ?>
-											<?php echo $input_type === 'email' ? 'autocomplete="email"' : ''; ?>
-											<?php echo $input_type === 'text' && ($name === 'name' || strpos($name, 'name') !== false) ? 'autocomplete="name"' : ''; ?>
-										>
-									<?php endif; ?>
-								</div>
-							<?php endforeach; ?>
-
-							<input type="hidden" name="page_url" value="" data-tbb-cf-page-url>
-							<input type="hidden" name="form_id" value="<?php echo esc_attr((string) $form_id); ?>">
-							<input type="hidden" name="action" value="tbb_contact_submit">
-							<input type="hidden" name="nonce" value="<?php echo esc_attr(wp_create_nonce('tbb_contact_form')); ?>">
-
-							<div class="tbb-cf-actions">
-								<button type="submit" class="tbb-cf-submit">
-									<?php echo esc_html__('Send', 'tbb-contact-form'); ?>
-								</button>
-								<div class="tbb-cf-status" aria-live="polite" data-tbb-cf-status></div>
-							</div>
-						</form>
+						<div class="tbb-cf-cf7" data-tbb-cf-cf7>
+							<?php
+							// Stored only from wp-admin after validation; output is CF7 HTML.
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+							echo do_shortcode($cf7_shortcode);
+							?>
+						</div>
 					</div>
 				</div>
 			</div>
