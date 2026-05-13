@@ -48,11 +48,15 @@
   touch-action: manipulation;
 }
 
-.tbb-cf-panel input,
-.tbb-cf-panel textarea,
-.tbb-cf-panel select {
+.tbb-cf-panel textarea {
   user-select: text;
   -webkit-user-select: text;
+}
+
+.tbb-cf-modal .tbb-cf-field label input.tbb-cf-control {
+  display: block;
+  width: 100%;
+  min-width: 0;
 }
 
 .tbb-cf-header {
@@ -95,37 +99,53 @@
   display: block;
   font-size: 0.92rem;
   opacity: 0.85;
-  margin-bottom: 6px;
+  margin-bottom: 0;
 }
 
-.tbb-cf-field input,
+/* Many themes use row flex on labels, which squeezes inputs to zero width; stack label + control */
+.tbb-cf-field label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  cursor: text;
+}
+
+.tbb-cf-field input:not([type="hidden"]),
 .tbb-cf-field textarea,
 .tbb-cf-field select {
+  flex: 0 0 auto;
+  align-self: stretch;
+  min-width: 0;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   font: inherit;
+  line-height: 1.4;
   color: inherit;
   border-radius: 10px;
   border: 1px solid rgba(0, 0, 0, 0.18);
   padding: 10px 12px;
+  min-height: 44px;
   background: rgba(255, 255, 255, 0.95);
+  /* Native textfield appearance — appearance:none breaks many themes/browsers for <input> */
+  -webkit-appearance: auto;
+  appearance: auto;
 }
 
-.tbb-cf-field input,
 .tbb-cf-field textarea {
   -webkit-appearance: none;
   appearance: none;
+  resize: vertical;
+  min-height: 110px;
 }
 
 .tbb-cf-field select {
-  appearance: auto;
   -webkit-appearance: menulist;
-}
-
-.tbb-cf-field textarea {
-  resize: vertical;
-  min-height: 110px;
+  appearance: auto;
 }
 
 .tbb-cf-actions {

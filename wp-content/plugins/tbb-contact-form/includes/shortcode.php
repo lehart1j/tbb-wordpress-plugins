@@ -116,13 +116,13 @@ final class TBB_Contact_Form_Shortcode {
 								<label>
 									<span><?php echo esc_html($label); ?><?php echo $req ? ' <span class="tbb-cf-req">*</span>' : ''; ?></span>
 									<?php if ($type === 'textarea') : ?>
-										<textarea name="<?php echo esc_attr($name); ?>" rows="5" <?php echo $req ? 'required' : ''; ?>></textarea>
+										<textarea class="tbb-cf-control" name="<?php echo esc_attr($name); ?>" rows="5" <?php echo $req ? 'required' : ''; ?>></textarea>
 									<?php elseif ($type === 'select') : ?>
 										<?php
 										$parts = array_map('trim', explode('|', $options));
 										$parts = array_filter($parts);
 										?>
-										<select name="<?php echo esc_attr($name); ?>" <?php echo $req ? 'required' : ''; ?>>
+										<select class="tbb-cf-control" name="<?php echo esc_attr($name); ?>" <?php echo $req ? 'required' : ''; ?>>
 											<?php if (!$req) : ?>
 												<option value=""><?php echo esc_html__('— Select —', 'tbb-contact-form'); ?></option>
 											<?php endif; ?>
@@ -131,12 +131,22 @@ final class TBB_Contact_Form_Shortcode {
 											<?php endforeach; ?>
 										</select>
 									<?php else : ?>
+										<?php
+										if ($type === 'number') {
+											$input_type = 'number';
+										} elseif (in_array($type, ['email', 'tel', 'url'], true)) {
+											$input_type = $type;
+										} else {
+											$input_type = 'text';
+										}
+										?>
 										<input
+											class="tbb-cf-control"
 											name="<?php echo esc_attr($name); ?>"
-											type="<?php echo esc_attr($type === 'number' ? 'number' : $type); ?>"
+											type="<?php echo esc_attr($input_type); ?>"
 											<?php echo $req ? 'required' : ''; ?>
-											<?php echo $type === 'email' ? 'autocomplete="email"' : ''; ?>
-											<?php echo $type === 'text' && ($name === 'name' || strpos($name, 'name') !== false) ? 'autocomplete="name"' : ''; ?>
+											<?php echo $input_type === 'email' ? 'autocomplete="email"' : ''; ?>
+											<?php echo $input_type === 'text' && ($name === 'name' || strpos($name, 'name') !== false) ? 'autocomplete="name"' : ''; ?>
 										>
 									<?php endif; ?>
 								</label>
