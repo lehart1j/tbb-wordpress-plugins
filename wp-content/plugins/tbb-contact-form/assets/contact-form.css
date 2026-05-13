@@ -171,24 +171,39 @@
   border: 1px solid #8a8a8a !important;
   border-radius: 8px !important;
   min-height: 48px !important;
-  -webkit-appearance: none;
-  appearance: none;
   pointer-events: auto !important;
   touch-action: manipulation !important;
   opacity: 1 !important;
   visibility: visible !important;
-  resize: vertical;
+}
+
+/* Do NOT put resize on <input> — invalid and breaks some browsers’ layout */
+.tbb-cf-panel input.tbb-cf-control {
+  height: auto !important;
+  min-height: 48px !important;
+  max-height: none !important;
+  overflow: visible !important;
+  resize: none !important;
+  -webkit-appearance: textfield;
+  appearance: auto;
 }
 
 .tbb-cf-panel textarea.tbb-cf-control {
   min-height: 130px !important;
+  height: auto !important;
+  max-height: min(50vh, 400px) !important;
+  overflow: auto !important;
   resize: vertical !important;
+  -webkit-appearance: textarea;
+  appearance: auto;
+  vertical-align: top;
 }
 
 .tbb-cf-panel select.tbb-cf-control {
   -webkit-appearance: menulist !important;
   appearance: auto !important;
   cursor: pointer;
+  height: auto !important;
 }
 
 .tbb-cf-panel .tbb-cf-control:focus {
