@@ -54,7 +54,7 @@ final class TBB_Contact_Form_Admin_Forms {
 			exit;
 		}
 
-		$cf7_shortcode = tbb_contact_form_cf7_build_shortcode($resolved);
+		$cf7_shortcode = tbb_contact_form_cf7_shortcode_for_storage($cf7_pasted, $resolved);
 		if ($cf7_shortcode === '') {
 			$url = add_query_arg(['page' => self::PAGE_SLUG, 'action' => 'edit', 'id' => $id, 'tbb_err' => 'cf7'], admin_url('admin.php'));
 			wp_safe_redirect($url);

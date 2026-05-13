@@ -2,7 +2,7 @@
 /**
  * Plugin Name: TBB Contact Form
  * Description: Popup shell that embeds Contact Form 7 via shortcode; optional GitHub updates and stored messages from legacy submissions.
- * Version: 1.3.0
+ * Version: 1.3.1
  * Author: James Lehart | Lehart Productions Limited
  * License: GPL-2.0-or-later
  * Text Domain: tbb-contact-form
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-define('TBB_CONTACT_FORM_VERSION', '1.3.0');
+define('TBB_CONTACT_FORM_VERSION', '1.3.1');
 define('TBB_CONTACT_FORM_PATH', plugin_dir_path(__FILE__));
 define('TBB_CONTACT_FORM_URL', plugin_dir_url(__FILE__));
 
