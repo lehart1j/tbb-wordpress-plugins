@@ -1,18 +1,47 @@
 /*
- * z-index: above Popup Maker / many opt-in overlays (often 99999999) and sticky headers.
- * When JS adds .tbb-cf-modal--portaled, the dialog is moved under <body> to escape
- * Elementor/Astra ancestors with transform (which break position:fixed + hit-testing).
+ * TBB Contact Form — centered modal, high z-index, reparented to <body> via JS.
+ * Labels use `for` + control `id` (no wrapping) so theme flex/label rules cannot break inputs.
  */
+
+.tbb-cf-button {
+  display: inline-block;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.3;
+  cursor: pointer;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 2px solid #45a0ab;
+  background: #45a0ab;
+  color: #fff;
+  text-decoration: none;
+  box-sizing: border-box;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.tbb-cf-button:hover,
+.tbb-cf-button:focus-visible {
+  background: #fff;
+  color: #45a0ab;
+  outline: none;
+}
+
+/* ---- Overlay: flex-centers the card; backdrop is full-screen behind ---- */
 .tbb-cf-modal {
   position: fixed;
   inset: 0;
   z-index: 2147483000;
-  isolation: isolate;
   display: none;
+  box-sizing: border-box;
 }
 
 .tbb-cf-modal[aria-hidden="false"] {
-  display: block;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   z-index: 2147483000 !important;
 }
 
@@ -20,182 +49,191 @@
   z-index: 2147483646 !important;
 }
 
-/* Backdrop: below panel, still receives clicks outside the card */
 .tbb-cf-backdrop {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 0;
   background: rgba(0, 0, 0, 0.55);
-  pointer-events: auto;
+  cursor: pointer;
 }
 
-/* Panel and all controls must receive pointer/touch events (some themes block nested content) */
+/* Clickable layer above backdrop, below panel — centers the card */
+.tbb-cf-dialog {
+  position: relative;
+  z-index: 1;
+  width: auto;
+  max-width: 540px;
+  max-height: min(90vh, 900px);
+  max-height: min(90dvh, 900px);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  pointer-events: none;
+}
+
 .tbb-cf-panel {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
+  position: relative;
   z-index: 2;
-  width: min(520px, calc(100vw - 32px));
-  max-height: min(80vh, 720px);
-  overflow: auto;
-  background: var(--wp--preset--color--base, #fff);
-  color: inherit;
-  border-radius: 14px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  padding: 18px;
-  font: inherit;
-  pointer-events: auto;
-  touch-action: manipulation;
-}
-
-.tbb-cf-panel input,
-.tbb-cf-panel textarea,
-.tbb-cf-panel select,
-.tbb-cf-panel button {
-  pointer-events: auto;
-  touch-action: manipulation;
-}
-
-.tbb-cf-panel textarea {
-  user-select: text;
-  -webkit-user-select: text;
-}
-
-.tbb-cf-modal .tbb-cf-field label input.tbb-cf-control {
-  display: block;
   width: 100%;
-  min-width: 0;
+  max-height: min(85vh, 800px);
+  max-height: min(85dvh, 800px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  pointer-events: auto;
+  box-sizing: border-box;
+  padding: 28px 24px 22px;
+  background: #ffffff;
+  color: #1a1a1a;
+  border-radius: 12px;
+  border: 1px solid #cfcfcf;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.45;
 }
 
 .tbb-cf-header {
-  padding-right: 36px;
+  padding-right: 40px;
+  margin-bottom: 8px;
 }
 
 .tbb-cf-title {
-  margin: 0 0 14px;
-  font-size: 1.15rem;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
   line-height: 1.3;
+  color: #111;
 }
 
 .tbb-cf-close {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 3;
-  width: 34px;
-  height: 34px;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
   border: 0;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.06);
-  color: inherit;
-  font-size: 22px;
+  background: #f0f0f0;
+  color: #222;
+  font-size: 24px;
   line-height: 1;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: auto;
 }
 
 .tbb-cf-close:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: #e2e2e2;
 }
 
 .tbb-cf-form {
-  display: grid;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.tbb-cf-field span {
-  display: block;
-  font-size: 0.92rem;
-  opacity: 0.85;
-  margin-bottom: 0;
-}
-
-/* Many themes use row flex on labels, which squeezes inputs to zero width; stack label + control */
-.tbb-cf-field label {
+.tbb-cf-field {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
-  width: 100%;
-  max-width: 100%;
   min-width: 0;
-  cursor: text;
 }
 
-.tbb-cf-field input:not([type="hidden"]),
-.tbb-cf-field textarea,
-.tbb-cf-field select {
-  flex: 0 0 auto;
-  align-self: stretch;
-  min-width: 0;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  font: inherit;
-  line-height: 1.4;
-  color: inherit;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.18);
-  padding: 10px 12px;
-  min-height: 44px;
-  background: rgba(255, 255, 255, 0.95);
-  /* Native textfield appearance — appearance:none breaks many themes/browsers for <input> */
-  -webkit-appearance: auto;
-  appearance: auto;
+/* Separate label — no nested input; avoids theme label { display:flex } bugs */
+.tbb-cf-field-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.3;
+  cursor: default;
+  margin: 0;
 }
 
-.tbb-cf-field textarea {
+/* Explicit control chrome (overrides MemberPress / Astra / Elementor) */
+.tbb-cf-panel .tbb-cf-control {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  font-family: inherit !important;
+  font-size: 16px !important;
+  line-height: 1.4 !important;
+  color: #1a1a1a !important;
+  background: #ffffff !important;
+  border: 1px solid #8a8a8a !important;
+  border-radius: 8px !important;
+  min-height: 48px !important;
   -webkit-appearance: none;
   appearance: none;
-  resize: vertical;
-  min-height: 110px;
-}
-
-.tbb-cf-field select {
-  -webkit-appearance: menulist;
-  appearance: auto;
-}
-
-/* Beat theme / builder rules (e.g. Astra, Elementor, CF7-style popups) that hide or block inputs */
-.tbb-cf-modal .tbb-cf-panel .tbb-cf-field input.tbb-cf-control,
-.tbb-cf-modal .tbb-cf-panel .tbb-cf-field textarea.tbb-cf-control,
-.tbb-cf-modal .tbb-cf-panel .tbb-cf-field select.tbb-cf-control {
   pointer-events: auto !important;
+  touch-action: manipulation !important;
   opacity: 1 !important;
   visibility: visible !important;
-  max-height: none !important;
-  clip: auto !important;
-  clip-path: none !important;
-  -webkit-text-fill-color: currentColor !important;
+  resize: vertical;
+}
+
+.tbb-cf-panel textarea.tbb-cf-control {
+  min-height: 130px !important;
+  resize: vertical !important;
+}
+
+.tbb-cf-panel select.tbb-cf-control {
+  -webkit-appearance: menulist !important;
+  appearance: auto !important;
+  cursor: pointer;
+}
+
+.tbb-cf-panel .tbb-cf-control:focus {
+  outline: 2px solid #45a0ab;
+  outline-offset: 2px;
+  border-color: #45a0ab !important;
 }
 
 .tbb-cf-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
+  margin-top: 4px;
 }
 
 .tbb-cf-submit {
+  display: inline-block;
   appearance: none;
   border: 0;
-  border-radius: 10px;
-  padding: 10px 14px;
-  background: var(--wp--preset--color--contrast, #111);
-  color: var(--wp--preset--color--base, #fff);
-  cursor: pointer;
+  border-radius: 999px;
+  padding: 12px 28px;
+  background: #45a0ab;
+  color: #fff;
   font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
   pointer-events: auto;
+  line-height: 1.3;
+}
+
+.tbb-cf-submit:hover {
+  filter: brightness(1.05);
 }
 
 .tbb-cf-submit:disabled {
-  opacity: 0.6;
+  opacity: 0.65;
   cursor: not-allowed;
 }
 
 .tbb-cf-status {
   font-size: 0.95rem;
-  opacity: 0.9;
+  flex: 1;
+  min-width: 140px;
 }
 
 .tbb-cf-status[data-kind="success"] {
@@ -219,13 +257,7 @@ html.tbb-cf-open {
   padding: 0.5em 0;
 }
 
-/*
- * Portal layouts: main + fixed sidebar (e.g. Astra child `main[role="main"]` + 300px nav,
- * MemberPress account `.mp_wrapper` flex with `#mepr-account-nav`). Use shortcode:
- *   [tbb_contact_form id="1" layout="portal"]
- * so the popup card sits in the content column (not under the sidebar). Modal still
- * reparents to <body> in JS so inputs escape flex/overflow; this only adjusts position.
- */
+/* MemberPress / portal embed: don’t let flex shrink the trigger to zero */
 main[role="main"] .tbb-cf-embed,
 #mepr-account-content .tbb-cf-embed,
 .mp_wrapper .tbb-cf-embed,
@@ -237,32 +269,4 @@ main[role="main"] .tbb-cf-embed,
 .mp_wrapper:has(> #mepr-account-nav) .tbb-cf-embed,
 #mepr-account-content .tbb-cf-embed {
   flex: 0 1 auto;
-}
-
-.tbb-cf-modal.tbb-cf-modal--portal-layout {
-  --tbb-cf-portal-sidebar: 300px;
-}
-
-@media (max-width: 1199px) and (min-width: 1025px) {
-  .tbb-cf-modal.tbb-cf-modal--portal-layout {
-    --tbb-cf-portal-sidebar: 250px;
-  }
-}
-
-@media (min-width: 1025px) {
-  .tbb-cf-modal.tbb-cf-modal--portal-layout[aria-hidden="false"] .tbb-cf-panel {
-    left: var(--tbb-cf-portal-sidebar);
-    right: 16px;
-    width: auto;
-    max-width: min(520px, calc(100vw - var(--tbb-cf-portal-sidebar) - 32px));
-  }
-}
-
-@media (max-width: 1024px) {
-  .tbb-cf-modal.tbb-cf-modal--portal-layout[aria-hidden="false"] .tbb-cf-panel {
-    left: 16px;
-    right: 16px;
-    width: auto;
-    max-width: min(520px, calc(100vw - 32px));
-  }
 }

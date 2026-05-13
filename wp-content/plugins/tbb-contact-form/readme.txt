@@ -3,7 +3,7 @@ Contributors: tbb
 Tags: contact form, popup, ajax
 Requires at least: 6.0
 Tested up to: 6.6
-Stable tag: 1.1.6
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,11 +19,9 @@ Optional: override the button label on that page only:
 
 [tbb_contact_form id="1" button_label="Contact us now"]
 
-Optional: on **account / portal** pages with a fixed left sidebar (e.g. MemberPress + your Astra child layout), use **layout="portal"** so the popup card lines up with the main column:
+Optional: on MemberPress account pages with a flex sidebar, add **layout="portal"** so the shortcode wrapper gets flex-safe sizing (the popup is always **centered in the viewport**):
 
 [tbb_contact_form id="1" layout="portal"]
-
-Override sidebar width from CSS if needed: `.tbb-cf-modal.tbb-cf-modal--portal-layout { --tbb-cf-portal-sidebar: 280px; }`
 
 The shortcode outputs a button; clicking it opens a popup (modal) without leaving the page. Submissions are stored in the database and listed under **TBB Contact → Messages**. Notification emails go to the addresses set under **TBB Contact → Settings** (or the site administration email if that list is left empty).
 

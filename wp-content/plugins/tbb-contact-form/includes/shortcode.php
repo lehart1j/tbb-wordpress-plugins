@@ -90,7 +90,8 @@ final class TBB_Contact_Form_Shortcode {
 		$layout_raw = isset($atts['layout']) ? strtolower(trim((string) $atts['layout'])) : '';
 		$portal_layout = ($layout_raw === 'portal');
 		$embed_class = 'tbb-cf-embed' . ($portal_layout ? ' tbb-cf-embed--portal-layout' : '');
-		$modal_class = 'tbb-cf-modal' . ($portal_layout ? ' tbb-cf-modal--portal-layout' : '');
+
+		$heading_id = 'tbb-cf-heading-' . $form_id;
 
 		ob_start();
 		?>
@@ -99,36 +100,46 @@ final class TBB_Contact_Form_Shortcode {
 				<?php echo esc_html($button_text); ?>
 			</button>
 
-			<div class="<?php echo esc_attr($modal_class); ?>" data-tbb-cf-modal aria-hidden="true">
-				<div class="tbb-cf-panel" role="dialog" aria-modal="true" aria-label="<?php echo esc_attr($modal_title); ?>">
-					<button type="button" class="tbb-cf-close" data-tbb-cf-close aria-label="<?php echo esc_attr__('Close', 'tbb-contact-form'); ?>">
-						&times;
-					</button>
+			<div class="tbb-cf-modal" data-tbb-cf-modal aria-hidden="true">
+				<div class="tbb-cf-backdrop" data-tbb-cf-close tabindex="-1" aria-hidden="true"></div>
+				<div class="tbb-cf-dialog">
+					<div class="tbb-cf-panel" role="dialog" aria-modal="true" aria-labelledby="<?php echo esc_attr($heading_id); ?>">
+						<button type="button" class="tbb-cf-close" data-tbb-cf-close aria-label="<?php echo esc_attr__('Close', 'tbb-contact-form'); ?>">
+							&times;
+						</button>
 
-					<div class="tbb-cf-header">
-						<h3 class="tbb-cf-title"><?php echo esc_html($modal_title); ?></h3>
-					</div>
+						<div class="tbb-cf-header">
+							<h3 id="<?php echo esc_attr($heading_id); ?>" class="tbb-cf-title"><?php echo esc_html($modal_title); ?></h3>
+						</div>
 
-					<form class="tbb-cf-form" data-tbb-cf-form>
-						<?php foreach ($fields as $field) : ?>
-							<?php
-							$name = (string) $field['name'];
-							$label = (string) $field['label'];
-							$type = (string) $field['type'];
-							$req = !empty($field['required']);
-							$options = (string) ($field['options'] ?? '');
-							?>
-							<div class="tbb-cf-field">
-								<label>
-									<span><?php echo esc_html($label); ?><?php echo $req ? ' <span class="tbb-cf-req">*</span>' : ''; ?></span>
+						<form class="tbb-cf-form" data-tbb-cf-form>
+							<?php foreach ($fields as $fi => $field) : ?>
+								<?php
+								$name = (string) $field['name'];
+								$label = (string) $field['label'];
+								$type = (string) $field['type'];
+								$req = !empty($field['required']);
+								$options = (string) ($field['options'] ?? '');
+								$field_id = 'tbb-cf-' . $form_id . '-f' . (int) $fi;
+								?>
+								<div class="tbb-cf-field">
+									<label class="tbb-cf-field-label" for="<?php echo esc_attr($field_id); ?>">
+										<?php echo esc_html($label); ?><?php echo $req ? ' <span class="tbb-cf-req">*</span>' : ''; ?>
+									</label>
 									<?php if ($type === 'textarea') : ?>
-										<textarea class="tbb-cf-control" name="<?php echo esc_attr($name); ?>" rows="5" <?php echo $req ? 'required' : ''; ?>></textarea>
+										<textarea
+											id="<?php echo esc_attr($field_id); ?>"
+											class="tbb-cf-control"
+											name="<?php echo esc_attr($name); ?>"
+											rows="5"
+											<?php echo $req ? 'required' : ''; ?>
+										></textarea>
 									<?php elseif ($type === 'select') : ?>
 										<?php
 										$parts = array_map('trim', explode('|', $options));
 										$parts = array_filter($parts);
 										?>
-										<select class="tbb-cf-control" name="<?php echo esc_attr($name); ?>" <?php echo $req ? 'required' : ''; ?>>
+										<select id="<?php echo esc_attr($field_id); ?>" class="tbb-cf-control" name="<?php echo esc_attr($name); ?>" <?php echo $req ? 'required' : ''; ?>>
 											<?php if (!$req) : ?>
 												<option value=""><?php echo esc_html__('— Select —', 'tbb-contact-form'); ?></option>
 											<?php endif; ?>
@@ -147,6 +158,7 @@ final class TBB_Contact_Form_Shortcode {
 										}
 										?>
 										<input
+											id="<?php echo esc_attr($field_id); ?>"
 											class="tbb-cf-control"
 											name="<?php echo esc_attr($name); ?>"
 											type="<?php echo esc_attr($input_type); ?>"
@@ -155,24 +167,23 @@ final class TBB_Contact_Form_Shortcode {
 											<?php echo $input_type === 'text' && ($name === 'name' || strpos($name, 'name') !== false) ? 'autocomplete="name"' : ''; ?>
 										>
 									<?php endif; ?>
-								</label>
+								</div>
+							<?php endforeach; ?>
+
+							<input type="hidden" name="page_url" value="" data-tbb-cf-page-url>
+							<input type="hidden" name="form_id" value="<?php echo esc_attr((string) $form_id); ?>">
+							<input type="hidden" name="action" value="tbb_contact_submit">
+							<input type="hidden" name="nonce" value="<?php echo esc_attr(wp_create_nonce('tbb_contact_form')); ?>">
+
+							<div class="tbb-cf-actions">
+								<button type="submit" class="tbb-cf-submit">
+									<?php echo esc_html__('Send', 'tbb-contact-form'); ?>
+								</button>
+								<div class="tbb-cf-status" aria-live="polite" data-tbb-cf-status></div>
 							</div>
-						<?php endforeach; ?>
-
-						<input type="hidden" name="page_url" value="" data-tbb-cf-page-url>
-						<input type="hidden" name="form_id" value="<?php echo esc_attr((string) $form_id); ?>">
-						<input type="hidden" name="action" value="tbb_contact_submit">
-						<input type="hidden" name="nonce" value="<?php echo esc_attr(wp_create_nonce('tbb_contact_form')); ?>">
-
-						<div class="tbb-cf-actions">
-							<button type="submit" class="tbb-cf-submit">
-								<?php echo esc_html__('Send', 'tbb-contact-form'); ?>
-							</button>
-							<div class="tbb-cf-status" aria-live="polite" data-tbb-cf-status></div>
-						</div>
-					</form>
+						</form>
+					</div>
 				</div>
-				<div class="tbb-cf-backdrop" data-tbb-cf-close tabindex="-1"></div>
 			</div>
 		</div>
 		<?php
