@@ -2,9 +2,20 @@
   const qs = (sel, root = document) => root.querySelector(sel);
   const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
+  /** When modal lived inside [data-tbb-cf-embed], move it back on close (Elementor/transform + high z-index overlays). */
+  const portalParents = new WeakMap();
+
   function openModal(modal) {
+    const embed = modal.closest("[data-tbb-cf-embed]");
+    if (embed && modal.parentElement !== document.body) {
+      portalParents.set(modal, embed);
+      document.body.appendChild(modal);
+      modal.classList.add("tbb-cf-modal--portaled");
+    }
+
     modal.setAttribute("aria-hidden", "false");
     document.documentElement.classList.add("tbb-cf-open");
+
     const panel = qs(".tbb-cf-panel", modal);
     const scope = panel || modal;
     const first = qs(
@@ -21,6 +32,13 @@
   function closeModal(modal) {
     modal.setAttribute("aria-hidden", "true");
     document.documentElement.classList.remove("tbb-cf-open");
+
+    const embed = portalParents.get(modal);
+    if (embed && embed.isConnected) {
+      embed.appendChild(modal);
+      portalParents.delete(modal);
+    }
+    modal.classList.remove("tbb-cf-modal--portaled");
   }
 
   function setStatus(modal, text, kind) {
@@ -30,9 +48,9 @@
     el.dataset.kind = kind || "";
   }
 
-  function init(root) {
-    const openBtn = qs("[data-tbb-cf-open]", root);
-    const modal = qs("[data-tbb-cf-modal]", root);
+  function initEmbed(embed) {
+    const openBtn = qs("[data-tbb-cf-open]", embed);
+    const modal = qs("[data-tbb-cf-modal]", embed);
     if (!openBtn || !modal) return;
 
     const closeEls = qsa("[data-tbb-cf-close]", modal);
@@ -63,7 +81,6 @@
           }
 
           const fd = new FormData(form);
-          // Prefer localized nonce, fallback to hidden input.
           if (window.TBBContactForm?.nonce && !fd.get("nonce")) {
             fd.set("nonce", window.TBBContactForm.nonce);
           }
@@ -100,9 +117,7 @@
   }
 
   function boot() {
-    qsa(".tbb-cf-button").forEach((btn) => init(btn.parentElement || document));
-    // Also initialize any modals even if button class customized.
-    qsa("[data-tbb-cf-modal]").forEach((modal) => init(modal.parentElement || document));
+    qsa("[data-tbb-cf-embed]").forEach((embed) => initEmbed(embed));
   }
 
   if (document.readyState === "loading") {
@@ -111,4 +126,3 @@
     boot();
   }
 })();
-

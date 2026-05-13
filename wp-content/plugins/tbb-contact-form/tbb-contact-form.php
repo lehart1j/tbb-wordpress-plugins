@@ -2,7 +2,7 @@
 /**
  * Plugin Name: TBB Contact Form
  * Description: Popup contact form that emails the admin and stores submissions for viewing in wp-admin.
- * Version: 1.1.4
+ * Version: 1.1.6
  * Author: James Lehart | Lehart Productions Limited
  * License: GPL-2.0-or-later
  * Text Domain: tbb-contact-form
@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-define('TBB_CONTACT_FORM_VERSION', '1.1.4');
+define('TBB_CONTACT_FORM_VERSION', '1.1.6');
 define('TBB_CONTACT_FORM_PATH', plugin_dir_path(__FILE__));
 define('TBB_CONTACT_FORM_URL', plugin_dir_url(__FILE__));
 

@@ -42,6 +42,7 @@ final class TBB_Contact_Form_Shortcode {
 			[
 				'id' => 0,
 				'button_label' => '',
+				'layout' => '',
 			],
 			is_array($atts) ? $atts : [],
 			'tbb_contact_form'
@@ -86,14 +87,19 @@ final class TBB_Contact_Form_Shortcode {
 
 		$button_class = trim('tbb-cf-button ');
 
+		$layout_raw = isset($atts['layout']) ? strtolower(trim((string) $atts['layout'])) : '';
+		$portal_layout = ($layout_raw === 'portal');
+		$embed_class = 'tbb-cf-embed' . ($portal_layout ? ' tbb-cf-embed--portal-layout' : '');
+		$modal_class = 'tbb-cf-modal' . ($portal_layout ? ' tbb-cf-modal--portal-layout' : '');
+
 		ob_start();
 		?>
-		<div class="tbb-cf-embed" data-tbb-cf-embed>
+		<div class="<?php echo esc_attr($embed_class); ?>" data-tbb-cf-embed>
 			<button type="button" class="<?php echo esc_attr($button_class); ?>" data-tbb-cf-open>
 				<?php echo esc_html($button_text); ?>
 			</button>
 
-			<div class="tbb-cf-modal" data-tbb-cf-modal aria-hidden="true">
+			<div class="<?php echo esc_attr($modal_class); ?>" data-tbb-cf-modal aria-hidden="true">
 				<div class="tbb-cf-panel" role="dialog" aria-modal="true" aria-label="<?php echo esc_attr($modal_title); ?>">
 					<button type="button" class="tbb-cf-close" data-tbb-cf-close aria-label="<?php echo esc_attr__('Close', 'tbb-contact-form'); ?>">
 						&times;

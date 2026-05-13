@@ -1,14 +1,23 @@
-/* Stack above theme headers/overlays; isolate stacking so children z-index work */
+/*
+ * z-index: above Popup Maker / many opt-in overlays (often 99999999) and sticky headers.
+ * When JS adds .tbb-cf-modal--portaled, the dialog is moved under <body> to escape
+ * Elementor/Astra ancestors with transform (which break position:fixed + hit-testing).
+ */
 .tbb-cf-modal {
   position: fixed;
   inset: 0;
-  z-index: 9999999;
+  z-index: 2147483000;
   isolation: isolate;
   display: none;
 }
 
 .tbb-cf-modal[aria-hidden="false"] {
   display: block;
+  z-index: 2147483000 !important;
+}
+
+.tbb-cf-modal.tbb-cf-modal--portaled[aria-hidden="false"] {
+  z-index: 2147483646 !important;
 }
 
 /* Backdrop: below panel, still receives clicks outside the card */
@@ -148,6 +157,19 @@
   appearance: auto;
 }
 
+/* Beat theme / builder rules (e.g. Astra, Elementor, CF7-style popups) that hide or block inputs */
+.tbb-cf-modal .tbb-cf-panel .tbb-cf-field input.tbb-cf-control,
+.tbb-cf-modal .tbb-cf-panel .tbb-cf-field textarea.tbb-cf-control,
+.tbb-cf-modal .tbb-cf-panel .tbb-cf-field select.tbb-cf-control {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  max-height: none !important;
+  clip: auto !important;
+  clip-path: none !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
 .tbb-cf-actions {
   display: flex;
   align-items: center;
@@ -195,4 +217,52 @@ html.tbb-cf-open {
 .tbb-cf-admin-note {
   font-size: 0.9rem;
   padding: 0.5em 0;
+}
+
+/*
+ * Portal layouts: main + fixed sidebar (e.g. Astra child `main[role="main"]` + 300px nav,
+ * MemberPress account `.mp_wrapper` flex with `#mepr-account-nav`). Use shortcode:
+ *   [tbb_contact_form id="1" layout="portal"]
+ * so the popup card sits in the content column (not under the sidebar). Modal still
+ * reparents to <body> in JS so inputs escape flex/overflow; this only adjusts position.
+ */
+main[role="main"] .tbb-cf-embed,
+#mepr-account-content .tbb-cf-embed,
+.mp_wrapper .tbb-cf-embed,
+.account_form .elementor-shortcode .tbb-cf-embed {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.mp_wrapper:has(> #mepr-account-nav) .tbb-cf-embed,
+#mepr-account-content .tbb-cf-embed {
+  flex: 0 1 auto;
+}
+
+.tbb-cf-modal.tbb-cf-modal--portal-layout {
+  --tbb-cf-portal-sidebar: 300px;
+}
+
+@media (max-width: 1199px) and (min-width: 1025px) {
+  .tbb-cf-modal.tbb-cf-modal--portal-layout {
+    --tbb-cf-portal-sidebar: 250px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .tbb-cf-modal.tbb-cf-modal--portal-layout[aria-hidden="false"] .tbb-cf-panel {
+    left: var(--tbb-cf-portal-sidebar);
+    right: 16px;
+    width: auto;
+    max-width: min(520px, calc(100vw - var(--tbb-cf-portal-sidebar) - 32px));
+  }
+}
+
+@media (max-width: 1024px) {
+  .tbb-cf-modal.tbb-cf-modal--portal-layout[aria-hidden="false"] .tbb-cf-panel {
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-width: min(520px, calc(100vw - 32px));
+  }
 }
