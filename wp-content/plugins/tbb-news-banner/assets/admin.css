@@ -1,0 +1,90 @@
+.tbb-nb-types {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 8px 16px;
+	margin: 12px 0 24px;
+	padding: 12px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.tbb-nb-types__item {
+	display: block;
+}
+
+.tbb-nb-slot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.tbb-nb-slot label {
+	min-width: 60px;
+	font-weight: 600;
+}
+
+.tbb-nb-slot select {
+	min-width: min(100%, 480px);
+}
+
+.tbb-nb-preview-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.tbb-nb-preview-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	margin-bottom: 12px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.tbb-nb-preview-item:last-child {
+	margin-bottom: 0;
+	padding-bottom: 0;
+	border-bottom: 0;
+}
+
+.tbb-nb-preview-thumb {
+	flex: 0 0 auto;
+	width: 40px;
+	height: 40px;
+	border-radius: 4px;
+	object-fit: cover;
+	background: #f0f0f1;
+}
+
+.tbb-nb-preview-copy {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.tbb-nb-preview-excerpt {
+	display: block;
+	color: #50575e;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.tbb-nb-preview-type {
+	display: inline-block;
+	margin-right: 8px;
+	padding: 1px 6px;
+	font-size: 11px;
+	background: #f0f0f1;
+	border-radius: 3px;
+}
+
+.tbb-nb-preview-date {
+	color: #646970;
+	margin-left: 8px;
+	font-size: 12px;
+}

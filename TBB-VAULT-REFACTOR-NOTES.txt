@@ -1,0 +1,78 @@
+================================================================================
+TBB VAULT — CURRENT BEHAVIOUR & FUTURE REFACTOR (for Cursor / future prompts)
+================================================================================
+
+SITE CONTEXT
+------------
+- WordPress, Astra child theme, MemberPress, ACF, custom post types (resources,
+  video bites, PPTs, live content, etc.).
+- Theme path (reference): wp-content/themes/astra-child/
+  - template-welcome.php   → Welcome / dashboard hub
+  - template-sub-child.php → Section hub (“tabs” / card grid)
+  - template-inner.php     → Leaf pages; heavy CPT + taxonomy queries
+
+WHAT WE FIGURED OUT (CURRENT ARCHITECTURE)
+------------------------------------------
+1) WELCOME PAGE (template-welcome.php)
+   - Much content comes from ACF on the welcome page and/or ACF Options
+     (e.g. welcome_page_tbb_volts_title on options — field name may typo “volts”).
+   - “Two vaults” (Teachers vs Parents) are two ACF repeaters on the SAME
+     welcome page, gated by WordPress roles (teacher/administrator vs parents).
+   - Tiles link to URLs stored in repeater subfields (not necessarily enforced
+     to be child pages, but often point at section pages).
+
+2) SUB-CHILD / SECTION PAGE (template-sub-child.php)
+   - No reliance on ACF for the main grid; the block editor body is NOT shown
+     (the_content() is commented out).
+   - “Tabs” / cards are built from the PAGE TREE: get_pages( child_of =>
+     current page ID ) lists ALL DESCENDANT pages; each becomes a card
+     (title, permalink, featured image or hardcoded fallback).
+   - To change the grid: add/remove/reorder pages under that parent in
+     Pages → hierarchy; change thumbnails via each child page’s featured image.
+   - Role checks use school_teacher / teacher / school_parents / parents
+     (note: welcome template uses slightly different role slugs — inconsistency).
+
+3) INNER PAGE (template-inner.php)
+   - “Resources” and related media: ACF on the INNER page selects taxonomy
+     terms (e.g. content_page_name, content_accessing_groups); CPTs
+     (video_bites, video_ppt, resources_pdf, tbbz_live) are queried by those
+     terms. MemberPress rule checks via membership_rule_id on CPT rows.
+   - Section titles often pulled from ACF Options, not the page.
+
+WHY THIS IS A PROBLEM (USER GOALS)
+-----------------------------------
+- Sub-pages cannot be managed as “content on this page” in the editor.
+- Tab/card order is implicit (page tree / menu order), not an explicit,
+  editor-friendly “vault tab” model.
+- Logic split across theme PHP, ACF Options, ACF per page, CPTs, taxonomies,
+   and MP rules — hard to document and easy to break.
+- User wants ONE plugin eventually to:
+  - Own vault UX (welcome → sections → inner).
+  - Manage content per page in wp-admin (including tab order, what appears
+    on each page) without hunting the tree + CPTs only.
+  - Optional: quick edit link per page (block editor) where appropriate.
+
+EXISTING SCAFFOLD (OPTIONAL — MAY BE OUT OF DATE OR WRONG DIRECTION)
+--------------------------------------------------------------------
+- Repo may contain: wp-content/plugins/tbb-vault/ (early plugin with page
+  templates + feature toggles). User said “leave it for now” re refactor;
+  future work should RE-READ theme files and user requirements before building
+  on that scaffold.
+
+INSTRUCTIONS FOR A FUTURE ASSISTANT
+------------------------------------
+When the user asks to refactor the TBB Vault into a plugin:
+1. Read astra-child template-welcome.php, template-sub-child.php,
+   template-inner.php (and functions.php if vault-related).
+2. Map every data source: ACF field names + Options keys, CPTs, taxonomies,
+   MP capabilities, menus (e.g. Balance Zone), shortcodes ([custom_search]).
+3. Design the plugin so “tabs” / section navigation and inner resources are
+   configurable in admin (order, labels, linked content) — do not rely solely
+   on implicit child_of unless user explicitly wants that preserved.
+4. Provide migration path: same URLs where possible, or redirects + content
+   import from existing CPT/ACF structure.
+5. Align role names with production (school_teacher vs teacher, etc.).
+
+================================================================================
+END — paste this file (or its path) into a future prompt when starting vault work.
+================================================================================
